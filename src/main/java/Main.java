@@ -4,7 +4,7 @@ import com.workday.insights.timeseries.arima.struct.ArimaParams;
 
 public class Main {
     public static void main(String[] args) {
-
+        SampleFrame frame = new SampleFrame();
 
 // Prepare input timeseries data.
         double[] dataArray = new double[] {2, 1, 2, 5, 2, 1, 2, 5, 2, 1, 2, 5, 2, 1, 2, 5};
