@@ -6,16 +6,23 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 
 public class Parse {
-        private static final String API_KEY = "d3c9a2737c5c4383813cb9ca3c1dcad0";  // Replace this
+        private static final String API_KEY = "d3c9a2737c5c4383813cb9ca3c1dcad0";
+        private ProgramLogic logic;
         private final HttpClient httpClient;
 
-        public Parse() {
+        public Parse(ProgramLogic logic) {
             this.httpClient = HttpClient.newHttpClient();
+            this.logic = logic;
         }
 
         public void fetchStockData(String symbol) {
+            if (logic.getMap().containsKey(symbol)) {
+                System.out.println("Already exists");
+                return;
+            }
             String url = "https://api.twelvedata.com/time_series" +
                     "?symbol=" + symbol +
                     "&interval=1day" +
@@ -51,13 +58,15 @@ public class Parse {
 
             JSONArray values = root.getJSONArray("values");
 
-            System.out.println("=== Last 90 Days Closing Prices for " + symbol + " ===");
+            ArrayList<Double> list = new ArrayList<>();
 
-            for (int i = 0; i < values.length(); i++) {
+            for (int i = 89; i >= 0; i--) {
                 JSONObject day = values.getJSONObject(i);
-                String date = day.getString("datetime");
                 String close = day.getString("close");
-                System.out.println(date + " : $" + close);
+                list.add(Double.parseDouble(close));
             }
+            System.out.println("added successfully, " + symbol + " is currently worth " + list.get(89));
+            logic.addToMap(symbol, list);
+            logic.addToNames(symbol);
         }
     }
