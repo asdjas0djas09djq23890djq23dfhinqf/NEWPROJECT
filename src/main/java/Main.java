@@ -6,7 +6,7 @@ public class Main {
     public static void main(String[] args) {
         SampleFrame frame = new SampleFrame();
         Parse parser = new Parse();
-        parser.fetchStockData("AAPL");
+        parser.fetchStockData("RTX");
 
 // Prepare input timeseries data.
         double[] dataArray = new double[] {2, 1, 2, 5, 2, 1, 2, 5, 2, 1, 2, 5, 2, 1, 2, 5};
@@ -41,6 +41,7 @@ public class Main {
 
 // Finally you can read log messages.
         String log = forecastResult.getLog();
+        System.out.println(forecastData[0]);
         System.out.println(log);
     }
 }
