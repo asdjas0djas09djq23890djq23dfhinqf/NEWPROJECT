@@ -1,7 +1,7 @@
 import javax.swing.*;
 
 public class SampleFrame {
-    public SampleFrame() {
+    public SampleFrame(ProgramLogic logic) {
         JFrame frame = new JFrame("Rags 2 Riches");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1760, 990);
@@ -10,7 +10,7 @@ public class SampleFrame {
         ImageIcon icon = new ImageIcon("src\\stonkicon.jpg");
         frame.setIconImage(icon.getImage());
 
-        DisplayPanel panel = new DisplayPanel();
+        DisplayPanel panel = new DisplayPanel(logic);
 
         frame.add(panel);
 

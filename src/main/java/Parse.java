@@ -68,5 +68,6 @@ public class Parse {
             System.out.println("added successfully, " + symbol + " is currently worth " + list.get(89));
             logic.addToMap(symbol, list);
             logic.addToNames(symbol);
+            logic.addToColorMap(symbol);
         }
     }
