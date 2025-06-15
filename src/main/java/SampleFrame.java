@@ -7,7 +7,7 @@ public class SampleFrame {
         frame.setSize(1760, 990);
         frame.setLocationRelativeTo(null);
 
-        ImageIcon icon = new ImageIcon("src\\stonkicon.jpg");
+        ImageIcon icon = new ImageIcon("src\\main\\java\\stonkicon.jpg");
         frame.setIconImage(icon.getImage());
 
         DisplayPanel panel = new DisplayPanel(logic);

@@ -1,3 +1,4 @@
+
 import com.workday.insights.timeseries.arima.Arima;
 import com.workday.insights.timeseries.arima.struct.ArimaParams;
 import com.workday.insights.timeseries.arima.struct.ForecastResult;
@@ -137,5 +138,9 @@ public class ProgramLogic {
             mapOfAllStocks.get(stock).add(estimate);
             currentDay++;
         }
+    }
+
+    public void buyStock(String symbol, int quantity) {
+        System.out.println("Buying " + quantity + " shares of " + symbol);
     }
 }
