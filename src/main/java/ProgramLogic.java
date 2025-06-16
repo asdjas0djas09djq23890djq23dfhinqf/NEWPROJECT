@@ -19,7 +19,7 @@ public class ProgramLogic {
         frame = new SampleFrame(this);
         parser = new Parse(this);
         Scanner scanner = new Scanner(System.in);
-        balance = 10000;
+        balance = 6767.67;
 
         stocks = new ArrayList<>();
 
