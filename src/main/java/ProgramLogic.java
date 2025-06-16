@@ -114,6 +114,7 @@ public class ProgramLogic {
     public void nextDay() {
         for (int i = 0; i < stocks.size(); i++) {
             Stock current = stocks.get(i);
+            double currentPrice = current.getPrices().get(current.getPrices().getSize() - 1)
             double[] array = current.getPrices().stream().mapToDouble(d -> d).toArray();
             int p = 0;
             int d = 1;
@@ -130,6 +131,7 @@ public class ProgramLogic {
             double estimate = forecastData[0];
             estimate += estimate * (Math.random() * 0.02 - 0.01);
             current.addToPrices(estimate);
+            balance -= (currentPrice - estimate)
             currentDay++;
         }
     }
