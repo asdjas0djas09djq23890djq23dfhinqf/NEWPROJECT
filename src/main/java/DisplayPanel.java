@@ -24,6 +24,7 @@ public class DisplayPanel extends JPanel implements ActionListener, MouseListene
 
     private Rectangle buttonOneRectangle = new Rectangle(550, 150, 600, 50);
     private Rectangle buttonTwoRectangle = new Rectangle(550, 200, 600, 50);
+    private Rectangle sellButton = new Rectangle(0, 0, 150, 60);
 
     private String stockInput = "";
     private boolean typing = false;
@@ -31,8 +32,11 @@ public class DisplayPanel extends JPanel implements ActionListener, MouseListene
     private final Rectangle submitButton = new Rectangle(520, 200, 150, 60);
     private Point mousePos = new Point(0, 0);
 
+    private Parse parser;
+
     public DisplayPanel(ProgramLogic logic) {
         this.logic = logic;
+        parser = new Parse(logic);
         setLayout(null);
 
         startButton = new JButton("Start");
@@ -224,13 +228,14 @@ public class DisplayPanel extends JPanel implements ActionListener, MouseListene
         g.drawString("Stock Performance", legendX, legendY);
         legendY += 30;
 
-        for (int i = 0; i < logic.getListOfStockNames().size(); i++) {
-            String currentStockName = logic.getListOfStockNames().get(i);
-            ArrayList<Double> stockValues = logic.getMap().get(currentStockName);
+        for (int i = 0; i < logic.getStocks().size(); i++) {
+            Stock current = logic.getStocks().get(i);
+            String currentStockName = current.getName();
+            ArrayList<Double> stockValues = current.getPrices();
             int pointsToGraph = stockValues.size() - 89;
             if (pointsToGraph < 2) continue;
 
-            Color stockColor = logic.getColorFromSymbol(currentStockName);
+            Color stockColor = current.getColor();
 
             double currentValue = stockValues.get(stockValues.size() - 1);
             double previousValue = stockValues.get(stockValues.size() - 2);
@@ -294,6 +299,28 @@ public class DisplayPanel extends JPanel implements ActionListener, MouseListene
         int titleWidth = g.getFontMetrics().stringWidth(title);
         g.drawString(title, getWidth()/2 - titleWidth/2, 100);
 
+        g.setFont(new Font("Papyrus", Font.PLAIN, 24));
+        String balanceText = "Balance: $" + String.format("%,.2f", logic.getBalance());
+        int balanceWidth = g.getFontMetrics().stringWidth(balanceText);
+        g.drawString(balanceText, getWidth() - balanceWidth - 20, 50);
+
+        g.setFont(new Font("Papyrus", Font.PLAIN, 20));
+        ArrayList<Stock> stocks = logic.getStocks();
+        int stockY = 350;
+        int stockX = 50;
+
+        if (!stocks.isEmpty()) {
+            g.drawString("Your Portfolio:", stockX, stockY - 30);
+
+            for (Stock stock : stocks) {
+                String stockText = stock.getName() + ": " + stock.getQuantity() + " shares";
+                g.drawString(stockText, stockX, stockY);
+                stockY += 30;
+            }
+        } else {
+            g.drawString("Your portfolio is empty", stockX, stockY);
+        }
+
         inputBox.setLocation(getWidth()/2 - inputBox.width/2, 220);
 
         g.setFont(new Font("Papyrus", Font.PLAIN, 28));
@@ -325,6 +352,18 @@ public class DisplayPanel extends JPanel implements ActionListener, MouseListene
         int submitTextWidth = g.getFontMetrics().stringWidth(submitText);
         g.drawString(submitText, submitButton.x + (submitButton.width - submitTextWidth)/2, submitButton.y + 40);
 
+        if (askingForQuantity) {
+            sellButton.setLocation(getWidth()/2 - sellButton.width/2, submitButton.y + submitButton.height + 20);
+            g.setColor(sellButton.contains(mousePos) ? new Color(180, 0, 0) : new Color(220, 0, 0));
+            g.fillRoundRect(sellButton.x, sellButton.y, sellButton.width, sellButton.height, 15, 15);
+            g.setColor(new Color(100, 0, 0));
+            g.setFont(new Font("Papyrus", Font.BOLD, 28));
+            String sellText = "Sell";
+            int sellTextWidth = g.getFontMetrics().stringWidth(sellText);
+            g.drawString(sellText, sellButton.x + (sellButton.width - sellTextWidth)/2, sellButton.y + 40);
+            g.setColor(green);
+        }
+
         backButton.setVisible(true);
         backButton.setBounds(50, 50, 150, 40);
         backButton.setFont(new Font("Papyrus", Font.BOLD, 20));
@@ -340,8 +379,21 @@ public class DisplayPanel extends JPanel implements ActionListener, MouseListene
                 if (askingForQuantity && !quantityInput.isEmpty()) {
                     try {
                         int quantity = Integer.parseInt(quantityInput);
-                        double currentPrice = logic.getMap().get(currentStockSymbol).get(logic.getMap().get(currentStockSymbol).size() - 1);
-                        logic.buyStock(currentStockSymbol, quantity);
+                        double price = 0;
+                        boolean found = false;
+                        for (int i = 0; i < logic.getStocks().size(); i++) {
+                            if (logic.getStocks().get(i).getName().equals(currentStockSymbol)) {
+                                price = logic.getStocks().get(i).getPrices().get(logic.getStocks().get(i).getPrices().size() - 1);
+                                found = true;
+                            }
+                        }
+                        if (!found) {
+                            price = parser.getCurrentPrice(currentStockSymbol);
+                        }
+                        if (logic.getBalance() - (price * quantity) > 0) {
+                            logic.initializeOrBuy(currentStockSymbol, quantity);
+                            logic.changeBalance(-1 * (price * quantity));
+                        }
                         askingForQuantity = false;
                         currentStockSymbol = "";
                         quantityInput = "";
@@ -432,7 +484,6 @@ public class DisplayPanel extends JPanel implements ActionListener, MouseListene
             }
             repaint();
         } else if (showPortfolioScreen) {
-            // This is where the new code goes - replacing any existing portfolio screen handling
             if (inputBox.contains(clickPoint)) {
                 typing = true;
                 if (askingForQuantity) {
@@ -445,7 +496,21 @@ public class DisplayPanel extends JPanel implements ActionListener, MouseListene
                 if (askingForQuantity && !quantityInput.isEmpty()) {
                     try {
                         int quantity = Integer.parseInt(quantityInput);
-                        logic.buyStock(currentStockSymbol, quantity);
+                        double price = 0;
+                        boolean found = false;
+                        for (int i = 0; i < logic.getStocks().size(); i++) {
+                            if (logic.getStocks().get(i).getName().equals(currentStockSymbol)) {
+                                price = logic.getStocks().get(i).getPrices().get(logic.getStocks().get(i).getPrices().size() - 1);
+                                found = true;
+                            }
+                        }
+                        if (!found) {
+                            price = parser.getCurrentPrice(currentStockSymbol);
+                        }
+                        if (logic.getBalance() - (price * quantity) > 0) {
+                            logic.initializeOrBuy(currentStockSymbol, quantity);
+                            logic.changeBalance(-1 * (price * quantity));
+                        }
                         askingForQuantity = false;
                         currentStockSymbol = "";
                         quantityInput = "";
@@ -462,6 +527,25 @@ public class DisplayPanel extends JPanel implements ActionListener, MouseListene
                     typing = true;
                     repaint();
                 }
+            } else if (askingForQuantity && sellButton.contains(clickPoint)) {
+                double price = 0;
+                int amt = 0;
+                int quantity = Integer.parseInt(quantityInput);
+                for (int i = 0; i < logic.getStocks().size(); i++) {
+                    if (logic.getStocks().get(i).getName().equals(currentStockSymbol)) {
+                        Stock stock = logic.getStocks().get(i);
+                        price = stock.getPrices().get(stock.getPrices().size() - 1);
+                        amt = stock.getQuantity();
+                        if (amt >= quantity) {
+                            stock.addQuantity(-1 * amt);
+                            logic.changeBalance(price * quantity);
+                        }
+                    }
+                }
+                askingForQuantity = false;
+                currentStockSymbol = "";
+                quantityInput = "";
+                typing = false;
             }
         } else if (showSimulatorScreen) {
             Rectangle nextDayButton = new Rectangle(getWidth() - 180, getHeight() - 80, 150, 50);
@@ -473,16 +557,7 @@ public class DisplayPanel extends JPanel implements ActionListener, MouseListene
     }
     @Override public void keyPressed(KeyEvent e) {}
     @Override public void keyReleased(KeyEvent e) {}
-    @Override
-    public void mousePressed(MouseEvent e) {
-        Point clickPoint = e.getPoint();
-
-        Rectangle nextDayButton = new Rectangle(getWidth() - 180, getHeight() - 80, 150, 50);
-        if (nextDayButton.contains(clickPoint)) {
-            logic.nextDay();
-            repaint();
-        }
-    }
+    @Override public void mousePressed(MouseEvent e) {}
     @Override public void mouseReleased(MouseEvent e) {}
     @Override public void mouseEntered(MouseEvent e) {}
     @Override public void mouseExited(MouseEvent e) {}

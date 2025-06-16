@@ -9,21 +9,19 @@ import java.util.HashMap;
 import java.util.Scanner;
 
 public class ProgramLogic {
-    private HashMap<String, ArrayList<Double>> mapOfAllStocks;
-    private ArrayList<String> listOfStockNames;
     private Parse parser;
     private SampleFrame frame;
     private int currentDay;
-    private HashMap<String, Color> mapOfColors;
+    private ArrayList<Stock> stocks;
+    private double balance;
 
     public ProgramLogic() {
         frame = new SampleFrame(this);
         parser = new Parse(this);
         Scanner scanner = new Scanner(System.in);
+        balance = 10000;
 
-        mapOfAllStocks = new HashMap<>();
-        listOfStockNames = new ArrayList<>();
-        mapOfColors = new HashMap<>();
+        stocks = new ArrayList<>();
 
         currentDay = 1;
 
@@ -42,33 +40,29 @@ public class ProgramLogic {
         parser.fetchStockData(symbol);
     }
 
-    public void addToMap(String inputString, ArrayList<Double> inputList) {
-        mapOfAllStocks.put(inputString, inputList);
+    public double getBalance() {
+        return balance;
     }
 
-    public void addToNames(String inputString) {
-        listOfStockNames.add(inputString);
+    public void changeBalance(double amt) {
+        balance += amt;
     }
 
-    public HashMap<String, ArrayList<Double>> getMap() {
-        return mapOfAllStocks;
+    public ArrayList<Stock> getStocks() {
+        return stocks;
     }
 
-    public ArrayList<String> getListOfStockNames() {
-        return listOfStockNames;
+    public void addToStocks(Stock stock) {
+        stocks.add(stock);
     }
 
     public int getDay() {
         return currentDay;
     }
 
-    public Color getColorFromSymbol(String symbol) {
-        return mapOfColors.getOrDefault(symbol, Color.black);
-    }
-
-    public void addToColorMap(String symbol) {
+    public Color randomColor() {
         Color color;
-        int decider = (int) (Math.random() * 11);
+        int decider = (int) (Math.random() * 10);
         if (decider == 0) {
             color = Color.blue;
         } else if (decider == 1) {
@@ -87,20 +81,19 @@ public class ProgramLogic {
             color = Color.orange;
         } else if (decider == 8) {
             color = Color.pink;
-        } else if (decider == 9) {
-            color = Color.red;
         } else {
-            color = Color.yellow;
+            color = Color.red;
         }
-        mapOfColors.put(symbol, color);
+        return color;
     }
 
     public double getLowestStockValue() {
         double min = Double.MAX_VALUE;
-        for (int i = 0; i < listOfStockNames.size(); i++) {
-            String name = listOfStockNames.get(i);
-            for (int j = 89; j < mapOfAllStocks.get(name).size(); j++) {
-                min = Math.min(min, mapOfAllStocks.get(name).get(j));
+        for (int i = 0; i < stocks.size(); i++) {
+            Stock current = stocks.get(i);
+            String name = current.getName();
+            for (int j = 89; j < current.getPrices().size(); j++) {
+                min = Math.min(min, current.getPrices().get(j));
             }
         }
         return min;
@@ -108,19 +101,20 @@ public class ProgramLogic {
 
     public double getHighestStockValue() {
         double max = Double.MIN_VALUE;
-        for (int i = 0; i < listOfStockNames.size(); i++) {
-            String name = listOfStockNames.get(i);
-            for (int j = 89; j < mapOfAllStocks.get(name).size(); j++) {
-                max = Math.max(max, mapOfAllStocks.get(name).get(j));
+        for (int i = 0; i < stocks.size(); i++) {
+            Stock current = stocks.get(i);
+            String name = current.getName();
+            for (int j = 89; j < current.getPrices().size(); j++) {
+                max = Math.max(max, current.getPrices().get(j));
             }
         }
         return max;
     }
 
     public void nextDay() {
-        for (int i = 0; i < listOfStockNames.size(); i++) {
-            String stock = listOfStockNames.get(i);
-            double[] array = mapOfAllStocks.get(stock).stream().mapToDouble(d -> d).toArray();
+        for (int i = 0; i < stocks.size(); i++) {
+            Stock current = stocks.get(i);
+            double[] array = current.getPrices().stream().mapToDouble(d -> d).toArray();
             int p = 0;
             int d = 1;
             int q = 5;
@@ -132,15 +126,27 @@ public class ProgramLogic {
             ArimaParams params = new ArimaParams(p, d, q, P, D, Q, m);
             ForecastResult forecastResult = Arima.forecast_arima(array, forecastSize, params);
             double[] forecastData = forecastResult.getForecast();
-            System.out.println(stock + " has a predicted value of " + forecastData[0] + " today");
+            System.out.println(current.getName() + " has a predicted value of " + forecastData[0] + " today");
             double estimate = forecastData[0];
             estimate += estimate * (Math.random() * 0.02 - 0.01);
-            mapOfAllStocks.get(stock).add(estimate);
+            current.addToPrices(estimate);
             currentDay++;
         }
     }
 
-    public void buyStock(String symbol, int quantity) {
-        System.out.println("Buying " + quantity + " shares of " + symbol);
+    public void initializeOrBuy(String symbol, int quantity) {
+        boolean exists = false;
+        int location = stocks.size();
+        for (int i = 0; i < stocks.size(); i++) {
+            if (stocks.get(i).getName().equals(symbol)) {
+                location = i;
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) {
+            initializeStock(symbol);
+        }
+        stocks.get(location).addQuantity(quantity);
     }
 }

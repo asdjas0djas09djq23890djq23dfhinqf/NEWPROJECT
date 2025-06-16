@@ -19,10 +19,6 @@ public class Parse {
     }
 
     public void fetchStockData(String symbol) {
-        if (logic.getMap().containsKey(symbol)) {
-            System.out.println("Already exists");
-            return;
-        }
         String url = "https://api.twelvedata.com/time_series" +
                 "?symbol=" + symbol +
                 "&interval=1day" +
@@ -66,10 +62,30 @@ public class Parse {
             list.add(Double.parseDouble(close));
         }
         System.out.println("added successfully, " + symbol + " is currently worth " + list.get(89));
-        logic.addToMap(symbol, list);
-        logic.addToNames(symbol);
-        logic.addToColorMap(symbol);
+        Stock stock = new Stock(symbol, logic, list);
+        logic.addToStocks(stock);
     }
 
+    public double getCurrentPrice(String symbol) {
+        String apiUrl = String.format("https://api.twelvedata.com/price?symbol=%s&apikey=%s", symbol, API_KEY);
 
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(apiUrl))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                return Double.parseDouble(new org.json.JSONObject(response.body()).getString("price"));
+            } else {
+                System.err.println("API request failed. Status code: " + response.statusCode());
+                return -1.0;
+            }
+        } catch (IOException | InterruptedException e) {
+            System.err.println("Error fetching stock price: " + e.getMessage());
+            return -1.0;
+        }
+    }
 }
